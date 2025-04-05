@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+      - ./dockers/db/postgres-initdb.d:/docker-entrypoint-initdb.d
+    networks:
+      - my_network
+
+  identity:
+    image: quay.io/keycloak/keycloak:25.0.4
+    container_name: "identity"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: db
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+    volumes:
+      - ./dockers/identity/realms:/opt/keycloak/data/import
+    command: ["start-dev", "--import-realm"]
+    ports:
+      - "8080:8080"
+    networks:
+      - my_network
+
+  # ecommerce-be:
+  #   build: 
+  #     context: be-medusa
+  #     target: development
+  #   container_name: be-medusa
+  #   depends_on:
+  #     - postgres
+  #   ports:
+  #     - "5173:5173" 
+  #     - "9000:9000"
+  #   networks:
+  #     - my_network
+  #   environment:
+  #       MEDUSA_ADMIN_ONBOARDING_TYPE: nextjs
+  #       STORE_CORS: https://storefront-url
+  #       ADMIN_CORS: https://admin-url
+  #       AUTH_CORS: https://admin-url,https://storefront-url
+  #       REDIS_URL: redis://localhost:6379
+  #       JWT_SECRET: supersecret
+  #       COOKIE_SECRET: supersecret
+  #       DATABASE_URL: postgres://postgres:postgres@postgres/medusa-be-medusa
+  #       MEDUSA_ADMIN_EMAIL: admin@example.com
+  #       MEDUSA_ADMIN_PASSWORD: 123
+  #       MEDUSA_WORKER_MODE: server
+  #       PORT: 9000
+
+
+  # ecommerce-fe:
+  #   container_name: fe-next
+  #   image: fe-medusa:latest
+  #   ports: 
+  #     - "8000:8000"
+  #   networks:
+  #     - my_network
+  #   environment:
+  #     MEDUSA_BACKEND_URL: https://store-admin.bagiit.vn
+
+
+volumes:
+  pg_data:
+
+networks:
+  my_network:
